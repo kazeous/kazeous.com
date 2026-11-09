@@ -1,0 +1,704 @@
+/* Artwork detail modal + full-screen image viewer.
+ * Both dialogs are portalled to <body>, outside .site-shell, so they set their own font and box model.
+ * BeerCSS styles every <dialog> (centered at 10% with a transform, hidden backdrop) and every <button>
+ * (primary fill, 1.5rem-capped icons/images, ripple ::after, !important radius on :active), so the
+ * selectors below are deliberately specific enough to win over those rules. */
+
+dialog.artwork-modal,
+dialog.image-viewer {
+    --gx-ink: oklch(22% 0.025 248);
+    --gx-ink-2: oklch(46% 0.028 244);
+    --gx-line: oklch(90% 0.018 232);
+    --gx-panel: oklch(99.4% 0.004 232);
+    --gx-tile: oklch(96.6% 0.012 232);
+    --gx-tint: color-mix(in srgb, var(--color-accent) 13%, white);
+
+    box-sizing: border-box;
+    font-family: var(--font-body);
+    line-height: 1.5;
+}
+
+dialog.artwork-modal *,
+dialog.image-viewer * {
+    box-sizing: border-box;
+}
+
+/* The page scrolls on <html> (BeerCSS only locks <body>); keep the gutter so nothing shifts sideways. */
+html:has(dialog.artwork-modal[open], dialog.image-viewer[open]) {
+    overflow: hidden;
+    scrollbar-gutter: stable;
+}
+
+/* A later stylesheet sets `* { border-radius: inherit }`, which would round every block like the dialog.
+   Type selectors (0,0,1) beat that universal rule but still lose to the classes below that round themselves. */
+:where(dialog.artwork-modal, dialog.image-viewer) :is(div, section, p, ul, li, span, a, button, img, time, h2, h3) {
+    border-radius: 0;
+}
+
+/* Zero specificity: margins must beat BeerCSS's sibling-spacing rule (hence !important), while the
+   padding reset must lose to component classes such as .am-badge and .am-block. */
+:where(dialog.artwork-modal, dialog.image-viewer) :where(h2, h3, p, ul, li, section) {
+    margin: 0 !important;
+    padding: 0;
+}
+
+/* ---------- Shared buttons ---------- */
+.gx-btn.gx-btn.gx-btn {
+    --_size: auto;
+
+    display: inline-flex;
+    block-size: auto;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    padding: 0;
+    border: 0;
+    border-radius: var(--gx-radius, 999px) !important;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    line-height: 1;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color var(--dur-short) var(--ease-out), color var(--dur-short) var(--ease-out), opacity var(--dur-short);
+}
+
+.gx-btn.gx-btn.gx-btn::after {
+    content: none;
+}
+
+.gx-btn.gx-btn.gx-btn > svg {
+    width: 1em;
+    min-width: 0;
+    max-width: none;
+    height: 1em;
+    min-height: 0;
+    max-height: none;
+}
+
+.gx-btn.gx-btn.gx-btn:focus-visible {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 2px;
+}
+
+.gx-btn.gx-btn.gx-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+}
+
+.gx-icon-btn.gx-icon-btn.gx-icon-btn {
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1.15rem;
+}
+
+.gx-icon-btn.gx-icon-btn.gx-icon-btn:hover {
+    background: var(--gx-tile);
+}
+
+.gx-pill-btn.gx-pill-btn.gx-pill-btn {
+    flex: none;
+    padding: 0.5rem 0.85rem;
+    border: var(--rule-hair) solid var(--gx-line);
+    background: white;
+    color: var(--gx-ink);
+    font-size: var(--text-xs);
+    font-weight: 700;
+}
+
+.gx-pill-btn.gx-pill-btn.gx-pill-btn > svg {
+    font-size: 0.7rem;
+    color: var(--color-accent);
+}
+
+.gx-pill-btn.gx-pill-btn.gx-pill-btn:hover {
+    background: var(--gx-tile);
+}
+
+/* ---------- Detail modal ---------- */
+dialog.artwork-modal[open] {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    width: min(100% - 2rem, 70rem);
+    min-inline-size: 0;
+    height: fit-content;
+    max-height: min(100dvh - 2rem, 50rem);
+    margin: auto;
+    flex-direction: column;
+    padding: 0;
+    overflow: hidden;
+    border: var(--rule-hair) solid var(--gx-line);
+    border-radius: 18px;
+    background: var(--gx-panel);
+    box-shadow: 0 40px 90px -40px oklch(15% 0.03 250 / 0.55);
+    color: var(--gx-ink);
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    animation: gx-modal-in 280ms var(--ease-out);
+}
+
+dialog.artwork-modal::backdrop {
+    background: oklch(16% 0.03 250 / 0.55);
+    opacity: 1;
+    visibility: visible;
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    animation: gx-fade-in 280ms var(--ease-out);
+}
+
+.am-topbar {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem 0.25rem;
+}
+
+.am-menu {
+    position: relative;
+}
+
+.am-menu-list {
+    position: absolute;
+    top: calc(100% + 0.35rem);
+    right: 0;
+    z-index: 2;
+    display: grid;
+    min-width: 13rem;
+    padding: 0.35rem;
+    border: var(--rule-hair) solid var(--gx-line);
+    border-radius: 12px;
+    background: white;
+    box-shadow: 0 18px 40px -18px oklch(15% 0.03 250 / 0.45);
+}
+
+.am-menu-item.am-menu-item.am-menu-item {
+    --gx-radius: 8px;
+
+    justify-content: flex-start;
+    padding: 0.6rem 0.75rem;
+    color: var(--gx-ink);
+    font-size: var(--text-sm);
+    text-align: start;
+    white-space: nowrap;
+}
+
+.am-menu-item.am-menu-item.am-menu-item > svg {
+    color: var(--color-accent);
+}
+
+.am-menu-item.am-menu-item.am-menu-item:hover {
+    background: var(--gx-tile);
+}
+
+.am-body {
+    display: grid;
+    min-height: 0;
+    flex: 1;
+    grid-template-columns: minmax(0, 1.2fr) minmax(19rem, 1fr);
+    /* Start, not stretch: a stretched media box would ignore its aspect-ratio. */
+    align-items: start;
+    gap: var(--space-lg);
+    padding: 0.5rem var(--space-lg) var(--space-lg);
+}
+
+/* Artwork (opens the viewer) */
+/* Sized to the artwork's own aspect ratio (--artwork-ratio), capped so tall pieces still fit the window. */
+.am-media.am-media.am-media {
+    --gx-radius: 14px;
+
+    position: relative;
+    width: 100%;
+    height: auto;
+    max-height: min(100dvh - 9rem, 41rem);
+    aspect-ratio: var(--artwork-ratio, 1);
+    overflow: hidden;
+    background: var(--gx-tile);
+    cursor: zoom-in;
+}
+
+.am-media.am-media.am-media > img {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    height: 100%;
+    min-height: 0;
+    max-height: none;
+    border-radius: 0;
+    object-fit: contain;
+}
+
+.am-media-hint {
+    position: absolute;
+    bottom: 0.75rem;
+    left: 50%;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    background: oklch(18% 0.03 248 / 0.66);
+    color: white;
+    font-size: var(--text-xs);
+    font-weight: 600;
+    opacity: 0;
+    transform: translate(-50%, 4px);
+    transition: opacity var(--dur-short) var(--ease-out), transform var(--dur-short) var(--ease-out);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+}
+
+.am-media-hint svg {
+    width: 0.8rem;
+    height: 0.8rem;
+}
+
+.am-media:hover .am-media-hint,
+.am-media:focus-visible .am-media-hint {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
+/* Info column */
+.am-info {
+    display: flex;
+    min-height: 0;
+    max-height: min(100dvh - 9rem, 41rem);
+    flex-direction: column;
+    gap: var(--space-sm);
+    padding-right: 0.25rem;
+    overflow-y: auto;
+}
+
+.am-artist {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.am-avatar {
+    display: grid;
+    width: 2.5rem;
+    height: 2.5rem;
+    flex: none;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--gx-tint);
+    color: var(--color-accent);
+    font-weight: 800;
+}
+
+.am-artist-text,
+.am-feature-text {
+    min-width: 0;
+    flex: 1;
+}
+
+.am-artist-name,
+.am-feature-name {
+    overflow: hidden;
+    font-size: var(--text-sm);
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.am-artist-role,
+.am-feature-role {
+    color: var(--gx-ink-2);
+    font-size: var(--text-xs);
+}
+
+dialog.artwork-modal .am-title {
+    color: var(--gx-ink);
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    font-weight: 400;
+    line-height: 1.1;
+    overflow-wrap: anywhere;
+}
+
+.am-badge {
+    display: inline-flex;
+    align-self: flex-start;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 999px;
+    background: var(--gx-tint);
+    color: var(--color-accent);
+    font-size: var(--text-xs);
+    font-weight: 700;
+}
+
+.am-block {
+    display: grid;
+    gap: var(--space-2xs);
+    padding-top: var(--space-sm);
+    border-top: var(--rule-hair) solid var(--gx-line);
+}
+
+dialog.artwork-modal .am-block h3 {
+    color: var(--gx-ink);
+    font-family: var(--font-body);
+    font-size: var(--text-sm);
+    font-weight: 700;
+}
+
+.am-feature {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0.75rem;
+    border-radius: 10px;
+    background: var(--gx-tile);
+}
+
+.am-feature-icon {
+    display: grid;
+    width: 2.25rem;
+    height: 2.25rem;
+    flex: none;
+    place-items: center;
+    border-radius: 8px;
+    background: white;
+    color: var(--color-accent);
+}
+
+.am-versions {
+    display: flex;
+    gap: var(--space-2xs);
+    overflow-x: auto;
+}
+
+.am-version.am-version.am-version {
+    --gx-radius: 8px;
+
+    width: 4.5rem;
+    height: 4.5rem;
+    flex: none;
+    overflow: hidden;
+    outline: 2px solid transparent;
+    outline-offset: 1px;
+    background: var(--gx-tile);
+}
+
+.am-version.am-version.am-version > img {
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    max-height: none;
+    border-radius: 0;
+    object-fit: cover;
+}
+
+.am-version.am-version.am-version[aria-pressed="true"] {
+    outline-color: var(--color-accent);
+}
+
+.am-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    /* Full shorthand: BeerCSS reverts list padding (`:not(nav) > :is(ul, ol) { padding: revert }`). */
+    padding: var(--space-sm) 0 0;
+    border-top: var(--rule-hair) solid var(--gx-line);
+    list-style: none;
+}
+
+.am-chip {
+    padding: 0.25rem 0.65rem !important;
+    border: var(--rule-hair) solid var(--gx-line);
+    border-radius: 999px;
+    background: white;
+    font-size: var(--text-xs);
+    font-weight: 600;
+}
+
+.am-chip-muted {
+    background: var(--gx-tile);
+    color: var(--gx-ink-2);
+}
+
+.am-published {
+    color: var(--gx-ink-2);
+    font-size: var(--text-xs);
+}
+
+/* ---------- Full-screen viewer ---------- */
+dialog.image-viewer[open] {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100%;
+    min-inline-size: 0;
+    max-width: none;
+    height: 100%;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    border: 0;
+    border-radius: 0;
+    background: oklch(14% 0.02 250 / 0.96);
+    box-shadow: none;
+    color: white;
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    animation: gx-fade-in 220ms var(--ease-out);
+}
+
+dialog.image-viewer::backdrop {
+    background: transparent;
+}
+
+/* Wrapper that goes fullscreen (the Fullscreen API refuses <dialog> elements). */
+.iv-frame {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+}
+
+.iv-frame:fullscreen {
+    background: oklch(14% 0.02 250);
+}
+
+.iv-frame:fullscreen::backdrop {
+    background: oklch(14% 0.02 250);
+}
+
+.iv-stage {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+}
+
+.iv-stage.is-gesturing {
+    cursor: grabbing;
+}
+
+.iv-image {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    max-width: none;
+    max-height: none;
+    border-radius: 0;
+    transform-origin: center;
+    transition: transform 220ms var(--ease-out);
+    will-change: transform;
+    pointer-events: none;
+}
+
+.iv-stage.is-gesturing .iv-image {
+    transition: none;
+}
+
+.iv-image.is-loading {
+    visibility: hidden;
+}
+
+.iv-loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    color: oklch(100% 0 0 / 0.7);
+    font-size: var(--text-sm);
+    transform: translate(-50%, -50%);
+}
+
+.iv-chip {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 0.8rem !important;
+    border: var(--rule-hair) solid oklch(100% 0 0 / 0.14);
+    border-radius: 10px;
+    background: oklch(20% 0.02 250 / 0.7);
+    font-size: var(--text-xs);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    pointer-events: none;
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+}
+
+.iv-chip-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-accent);
+}
+
+.iv-close.iv-close.iv-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    border: var(--rule-hair) solid oklch(100% 0 0 / 0.14);
+    background: oklch(20% 0.02 250 / 0.7);
+    color: white;
+}
+
+.iv-close.iv-close.iv-close:hover {
+    background: oklch(30% 0.02 250 / 0.85);
+}
+
+.iv-toolbar {
+    position: absolute;
+    bottom: 1.25rem;
+    left: 50%;
+    display: flex;
+    max-width: calc(100% - 2rem);
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.4rem 0.6rem;
+    overflow-x: auto;
+    border: var(--rule-hair) solid oklch(100% 0 0 / 0.14);
+    border-radius: 14px;
+    background: oklch(20% 0.02 250 / 0.78);
+    transform: translateX(-50%);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+}
+
+.iv-tool.iv-tool.iv-tool {
+    --gx-radius: 10px;
+
+    width: 2.5rem;
+    height: 2.5rem;
+    flex: none;
+    color: oklch(100% 0 0 / 0.85);
+    font-size: 1rem;
+}
+
+.iv-tool.iv-tool.iv-tool:hover:not(:disabled) {
+    background: oklch(100% 0 0 / 0.1);
+    color: white;
+}
+
+.iv-divider {
+    width: 1px;
+    height: 1.5rem;
+    flex: none;
+    margin-inline: 0.35rem;
+    background: oklch(100% 0 0 / 0.18);
+}
+
+.iv-slider {
+    width: 9rem;
+    flex: none;
+    accent-color: var(--color-accent);
+    cursor: pointer;
+}
+
+.iv-percent {
+    min-width: 3.25rem;
+    flex: none;
+    font-size: var(--text-xs);
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    text-align: end;
+}
+
+/* ---------- Motion ---------- */
+@keyframes gx-modal-in {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.985);
+    }
+}
+
+@keyframes gx-fade-in {
+    from {
+        opacity: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    dialog.artwork-modal[open],
+    dialog.artwork-modal::backdrop,
+    dialog.image-viewer[open] {
+        animation: none;
+    }
+
+    .iv-image {
+        transition: none;
+    }
+}
+
+/* ---------- Small screens ---------- */
+@media (max-width: 50rem) {
+    dialog.artwork-modal[open] {
+        width: 100%;
+        height: 100%;
+        max-height: none;
+        border: 0;
+        border-radius: 0;
+        overflow-y: auto;
+    }
+
+    .am-topbar {
+        position: sticky;
+        top: 0;
+        z-index: 3;
+        background: var(--gx-panel);
+    }
+
+    .am-body {
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--space-md);
+        padding: 0 var(--space-sm) var(--space-lg);
+    }
+
+    .am-media.am-media.am-media {
+        max-height: min(60dvh, 26rem);
+    }
+
+    .am-media-hint {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+
+    .am-info {
+        max-height: none;
+        overflow: visible;
+    }
+
+    .iv-slider {
+        width: 6rem;
+    }
+}
+
+@media (max-width: 30rem) {
+    .iv-slider {
+        display: none;
+    }
+
+    .iv-toolbar {
+        gap: 0.1rem;
+        padding-inline: 0.4rem;
+    }
+
+    .iv-tool.iv-tool.iv-tool {
+        width: 2.15rem;
+        height: 2.15rem;
+    }
+
+    .iv-divider {
+        margin-inline: 0.15rem;
+    }
+
+    .iv-percent {
+        min-width: 2.75rem;
+    }
+}

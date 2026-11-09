@@ -5,8 +5,7 @@ import {aboutSubRoutes} from "./aboutRoutes.tsx";
 
 function LinkButton(props: Readonly<{ path: string, name: string, isActive: boolean }>) {
     return <Link to={`${props.path}`} className={clsx("about-subnav-link", props.isActive && "is-active")}>
-        <span>{props.name}</span>
-        <span aria-hidden="true">↗</span>
+        {props.name}
     </Link>;
 }
 

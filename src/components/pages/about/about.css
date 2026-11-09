@@ -1,46 +1,54 @@
-/* Hallmark · macrostructure: Split Studio · tone: technical-editorial · anchor hue: 232
- * pre-emit critique: P5 H5 E5 S5 R5 V4 · contrast: pass (40–41)
- * nav: N9 · footer: Ft2 · slop: pass (42–45) · mobile: pass (34, 49, 50–57)
- */
-p.large {
-    font-size: medium;
-}
-
+/* About · profile layout: hero banner, section heading, bento cards. */
 .about-layout {
-    min-height: calc(100dvh - 13rem);
+    --about-card: oklch(99.4% 0.004 232);
+    --about-tile: oklch(96.6% 0.012 232);
+    --about-tile-hover: oklch(94% 0.022 232);
+    --about-line: oklch(90% 0.018 232);
+    --about-tint: color-mix(in srgb, var(--color-accent) 13%, white);
+    --about-radius: 12px;
+    --about-radius-sm: 8px;
+
+    min-height: calc(100dvh - 9rem);
 }
 
+/* BeerCSS adds a 1rem top margin between siblings (`… + :is(section, p, h3…)`); the bento layout spaces itself. */
+.about-page :where(h1, h2, h3, h4, p, dl, dd, figure, blockquote, section) {
+    margin-block: 0 !important;
+}
+
+/* Hero banner, body column and section headings live in layout/page-sections.css. */
+
+/* ---------- Sub navigation ---------- */
 .about-subnav {
     position: static !important;
-    display: grid !important;
+    display: flex !important;
     height: auto !important;
-    margin: 0 !important;
+    margin: 0 0 var(--space-lg) !important;
     padding: 0 !important;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0 !important;
-    border-bottom: var(--rule-hair) solid var(--color-rule);
-    background: var(--color-paper) !important;
+    gap: var(--space-2xs) !important;
+    border-bottom: var(--rule-hair) solid var(--about-line);
+    background: transparent !important;
 }
 
 .about-subnav-link {
     display: flex;
-    min-height: 3.5rem;
+    min-height: 3rem;
     align-items: center;
-    justify-content: space-between;
-    padding-inline: var(--space-md);
-    border-right: var(--rule-hair) solid var(--color-rule);
+    padding-inline: var(--space-sm);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    color: var(--color-ink-2);
     white-space: nowrap;
 }
 
-.about-subnav-link:last-child {
-    border-right: 0;
+.about-subnav-link:hover {
+    color: var(--color-ink);
 }
 
-.about-subnav-link:hover,
-.about-subnav-link:active,
 .about-subnav-link.is-active {
-    background: var(--color-ink);
-    color: var(--color-paper);
+    border-bottom-color: var(--color-accent);
+    color: var(--color-ink);
+    font-weight: 600;
 }
 
 .about-content,
@@ -52,81 +60,358 @@ p.large {
     padding: 0 !important;
 }
 
-.about-intro-grid {
+/* ---------- Bento grid + cards ---------- */
+.about-bento {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: var(--space-xs);
+}
+
+.about-span-4 { grid-column: span 4; }
+.about-span-5 { grid-column: span 5; }
+.about-span-6 { grid-column: span 6; }
+.about-span-7 { grid-column: span 7; }
+.about-span-8 { grid-column: span 8; }
+.about-span-12 { grid-column: 1 / -1; }
+
+.about-card {
+    position: relative;
+    min-width: 0;
+    overflow: hidden;
+    padding: var(--space-sm);
+    border: var(--rule-hair) solid var(--about-line);
+    border-radius: var(--about-radius);
+    background: var(--about-card);
+    transition:
+        transform var(--dur-medium) var(--ease-out),
+        box-shadow var(--dur-medium) var(--ease-out),
+        border-color var(--dur-medium) var(--ease-out);
+}
+
+.about-card-head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-sm);
+}
+
+.about-card-head h3 {
+    color: var(--color-ink);
+    font-size: var(--text-md);
+    line-height: 1.15;
+}
+
+.about-card-head p {
+    color: var(--color-ink-2);
+    font-size: var(--text-xs);
+    font-weight: 600;
+}
+
+.about-card-icon {
+    display: grid;
+    width: 2.25rem;
+    height: 2.25rem;
+    flex: none;
+    place-items: center;
+    border-radius: var(--about-radius-sm);
+    background: var(--about-tint);
+    color: var(--color-accent);
+}
+
+/* ---------- Profile card ---------- */
+.about-profile {
+    display: flex;
+    align-items: center;
+    gap: var(--space-lg);
+    padding: var(--space-md);
+}
+
+.about-avatar {
+    width: clamp(7rem, 13vw, 9.5rem);
+    aspect-ratio: 1;
+    flex: none;
+    border: 4px solid white;
+    border-radius: 50%;
+    object-fit: cover;
+    box-shadow: 0 6px 24px oklch(40% 0.06 242 / 0.22);
+}
+
+.about-profile-copy {
+    min-width: 0;
+}
+
+.about-name {
+    margin-block: 0 0.35rem !important;
+    color: var(--color-ink);
+    font-size: var(--text-3xl);
+    line-height: 1.05;
+}
+
+.about-tagline {
+    color: var(--color-ink-2);
+}
+
+.about-facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2xs);
+    margin-top: var(--space-sm) !important;
+}
+
+.about-fact {
+    display: flex;
+    align-items: baseline;
+    gap: 0.45rem;
+    padding: 0.35rem 0.6rem;
+    border: var(--rule-hair) solid var(--about-line);
+    border-radius: var(--about-radius-sm);
+    background: var(--about-tile);
+    font-size: var(--text-xs);
+}
+
+.about-fact dt {
+    color: var(--color-ink-2);
+}
+
+.about-fact dd {
+    color: var(--color-ink);
+    font-weight: 700;
+}
+
+/* ---------- Quotes card ---------- */
+.about-quotes {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    padding: var(--space-md);
+}
+
+.about-quote {
+    border-radius: 0;
+}
+
+.about-quote + .about-quote {
+    padding-top: var(--space-sm);
+    border-top: var(--rule-hair) solid var(--about-line);
+}
+
+.about-quote blockquote {
+    padding: 0;
+    border: 0;
+    color: var(--color-ink);
+    font-size: var(--text-sm);
+    font-style: normal;
+    font-weight: 700;
+    line-height: 1.5;
+}
+
+.about-quote figcaption {
+    margin-top: 0.3rem;
+    color: var(--color-ink-2);
+    font-size: var(--text-xs);
+}
+
+/* ---------- Tiles ---------- */
+.about-tiles {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-2xs);
 }
 
-.about-copy,
-.about-portrait {
-    min-width: 0;
-    margin: 0;
-    border-bottom: var(--rule-hair) solid var(--color-rule);
-}
+.about-tiles-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.about-tiles-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.about-tiles-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 
-.about-copy {
-    padding: var(--space-xl);
-    border-right: var(--rule-hair) solid var(--color-rule);
-}
-
-.about-copy h1 {
-    margin: 0 0 var(--space-xl);
-    font-size: var(--text-display);
-    line-height: 1;
-}
-
-.about-copy p {
-    max-width: 65ch;
-}
-
-.about-portrait {
-    display: grid;
-    grid-template-rows: minmax(0, 1fr) auto;
-    background: var(--color-paper-2);
-}
-
-.about-portrait img {
-    display: block;
-    width: 100%;
-    height: 100%;
-    min-height: 28rem;
-    object-fit: cover;
-}
-
-.about-portrait figcaption {
+.about-tile {
     display: flex;
-    min-height: 3.5rem;
+    min-width: 0;
+    min-height: 3.25rem;
     align-items: center;
-    padding-inline: var(--space-md);
-    border-top: var(--rule-hair) solid var(--color-rule);
+    gap: var(--space-xs);
+    padding: 0.55rem 0.75rem;
+    border-radius: var(--about-radius-sm);
+    position: relative;
+    overflow: hidden;
+    background: var(--about-tile);
+    color: var(--color-ink);
+    transition:
+        transform var(--dur-short) var(--ease-out),
+        background-color var(--dur-short) var(--ease-out),
+        box-shadow var(--dur-short) var(--ease-out);
 }
 
-@media (min-width: 48rem) {
-    .about-intro-grid {
-        grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+/* ---------- Hover lift + click ripple ---------- */
+@media (hover: hover) {
+    .about-card:hover {
+        border-color: color-mix(in srgb, var(--color-accent) 30%, var(--about-line));
+        box-shadow: 0 14px 30px -18px color-mix(in srgb, var(--color-accent) 55%, transparent);
+        transform: translateY(-3px);
+    }
+
+    .about-tile:hover {
+        background: var(--about-tile-hover);
+        box-shadow: 0 6px 14px -10px color-mix(in srgb, var(--color-accent) 60%, transparent);
+        transform: translateY(-2px);
+    }
+}
+
+.about-ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--color-accent) 22%, transparent);
+    pointer-events: none;
+    transform: scale(0);
+    animation: about-ripple 1300ms var(--ease-out) forwards;
+}
+
+@keyframes about-ripple {
+    to {
+        opacity: 0;
+        transform: scale(1);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .about-card,
+    .about-tile {
+        transform: none !important;
+    }
+}
+
+.about-tile-icon {
+    display: grid;
+    width: 1.5rem;
+    flex: none;
+    place-items: center;
+    color: var(--color-accent);
+}
+
+.about-tile-text {
+    display: grid;
+    min-width: 0;
+    flex: 1;
+}
+
+.about-tile-label {
+    font-size: var(--text-sm);
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+/* Wraps rather than truncating: values such as the "Currently Playing" list are full sentences. */
+.about-tile-value {
+    color: var(--color-ink-2);
+    font-size: var(--text-xs);
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+
+/* One-line text shown in a card in place of its list (Hobbies, Next Steps). */
+.about-note {
+    padding: 0.85rem 1rem;
+    border-radius: var(--about-radius-sm);
+    background: var(--about-tile);
+    color: var(--color-ink-2);
+    font-size: var(--text-sm);
+    font-style: italic;
+}
+
+.about-tile-arrow {
+    display: grid;
+    width: 1.6rem;
+    height: 1.6rem;
+    flex: none;
+    place-items: center;
+    border-radius: 50%;
+    background: white;
+    color: var(--color-accent);
+    font-size: var(--text-xs);
+    font-weight: 700;
+}
+
+/* ---------- Hobbies (skill bars) ---------- */
+.about-skill-groups {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-md);
+}
+
+.about-skill-group h4 {
+    margin-bottom: var(--space-2xs) !important;
+    color: var(--color-ink);
+    font-size: var(--text-base);
+}
+
+.about-skill + .about-skill {
+    margin-top: var(--space-2xs);
+}
+
+.about-skill-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.3rem;
+    color: var(--color-ink-2);
+    font-size: var(--text-xs);
+}
+
+.about-bar {
+    height: 5px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--about-line);
+}
+
+.about-bar span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(to right, color-mix(in srgb, var(--color-accent) 55%, white), var(--color-accent));
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 60rem) {
+    .about-bento > * {
+        grid-column: 1 / -1;
+    }
+
+    .about-skill-groups {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .about-tiles-4 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 
 @media (max-width: 40rem) {
     .about-subnav {
+        overflow-x: auto;
+    }
+
+    .about-profile {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-sm);
+    }
+
+    .about-name {
+        font-size: var(--text-2xl);
+    }
+
+    .about-tiles-3,
+    .about-skill-groups {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .about-skill-groups {
         grid-template-columns: minmax(0, 1fr);
     }
+}
 
-    .about-subnav-link {
-        border-right: 0;
-        border-bottom: var(--rule-hair) solid var(--color-rule);
-    }
-
-    .about-subnav-link:last-child {
-        border-bottom: 0;
-    }
-
-    .about-copy {
-        padding: var(--space-lg);
-        border-right: 0;
-    }
-
-    .about-portrait img {
-        min-height: 22rem;
+@media (max-width: 26rem) {
+    .about-tiles-2,
+    .about-tiles-3,
+    .about-tiles-4 {
+        grid-template-columns: minmax(0, 1fr);
     }
 }

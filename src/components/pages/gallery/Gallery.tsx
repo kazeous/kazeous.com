@@ -1,139 +1,90 @@
-import {Container} from "../../ui/Container.tsx";
-import {JustifiedGrid} from "./JustifiedGrid.tsx";
-import {useTagHooks} from "../../../hooks/useTagHooks.ts";
-import useMeasure from 'react-use-measure';
-import {GallerySearchbar} from "./GallerySearchbar.tsx";
-import {useSearchParams} from "react-router-dom";
-import {ArtworkUploader} from "./uploader-modal/ArtworkUploader.tsx";
+import {useLocation, useNavigate, useSearchParams} from "react-router-dom";
 import {useDocumentTitle} from "usehooks-ts";
-import {useQueryState} from "../../../hooks/useQueryState.ts";
-import {GalleryPagination} from "./GalleryPagination.tsx";
-import type {ImageInformation} from "../../../../api/src/images/ImageInformation.ts";
-import {RadioGroup} from "../../ui/RadioGroup.tsx";
-import {GalleryImage} from "./GalleryImage.tsx";
+import {useTagHooks} from "../../../hooks/useTagHooks.ts";
 import {useIsDevelopment} from "../../../hooks/useIsDevelopment.ts";
-import {artists, characters} from "../../../../api/src/images/TagUtils.ts";
+import {type ImageInformation, isAltInformation} from "../../../../api/src/images/ImageInformation.ts";
+import {ArtTag} from "../../../../api/src/images/TagUtils.ts";
+import {PageHero} from "../../layout/PageHero.tsx";
+import {SectionHeading} from "../../layout/SectionHeading.tsx";
+import {ArtworkUploader} from "./uploader-modal/ArtworkUploader.tsx";
+import {ArtworkCard} from "./ArtworkCard.tsx";
+import {ArtworkModal} from "./ArtworkModal.tsx";
 import "./gallery.css";
 
+function GallerySection({id, title, kicker, images, altTitles}: Readonly<{
+    id: string;
+    title: string;
+    kicker: string;
+    images: ImageInformation[];
+    altTitles: Set<string>;
+}>) {
+    if (images.length === 0) return null;
+    return <section className="gallery-section" aria-labelledby={id}>
+        <SectionHeading id={id} title={title} kicker={kicker}/>
+        <div className="card-grid">
+            {images.map(image => <ArtworkCard key={image.id} image={image} hasAlts={altTitles.has(image.title)}/>)}
+        </div>
+    </section>;
+}
+
 export function Gallery() {
-    const {images, altData, filters} = useTagHooks();
-    const [ref, bounds] = useMeasure({polyfill: ResizeObserver});
-    // TODO Remove pages when you navigate
-    const [page, setPage] = useQueryState("page", 1)
-    const [displayMode, setDisplayMode] = useQueryState<"paginated" | "monthly" | "all">("displayMode", "paginated")
-    const [filterMode, setFilterMode] = useQueryState<"and" | "or">("filterMode", "and")
-    const [searchParams, setSearchParams] = useSearchParams();
+    const {images, altData, imageEntries} = useTagHooks();
     const isDevelopment = useIsDevelopment();
-
-    const pageSize = 4;
-
+    const location = useLocation();
+    const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
     useDocumentTitle("Gallery - kazeous.com");
 
-    const displayedImages = images.filter(value => filters.doesImageMatch(value, filterMode)).sort((a, b) => b.published.localeCompare(a.published))
-    const yearMonthPairs = Array.from(new Set(displayedImages.map(value => value.published.substring(0, 7)))).sort((a, b) => b.localeCompare(a));
-    const displayedMonths = displayMode === "monthly" ? yearMonthPairs : yearMonthPairs.slice((page - 1) * pageSize, (page - 1) * pageSize + pageSize);
-    const imagesForMonth: { [monthYear: string]: ImageInformation[] } = displayedImages.reduce<{ [monthYear: string]: ImageInformation[] }>((previousValue, currentValue) => ({...previousValue, [currentValue.published.substring(0, 7)]: (previousValue[currentValue.published.substring(0, 7)] ?? []).concat(currentValue)}), {})
-    const selectedArtist = artists.find(artist => filters.artists[artist] === 1) ?? "";
+    const newestFirst = [...images].sort((a, b) => b.published.localeCompare(a.published));
+    const stickers = newestFirst.filter(image => image.tags.includes(ArtTag.sticker));
+    const commissions = newestFirst.filter(image => !image.tags.includes(ArtTag.sticker));
+    const altTitles = new Set(altData.keys());
 
-    function applyFilters(filterString: string) {
-        const nextSearchParams = new URLSearchParams(searchParams);
-        if (filterString === "") {
-            nextSearchParams.delete("filters");
-        } else {
-            nextSearchParams.set("filters", JSON.stringify(filterString));
+    // `?artwork=<id>` opens the detail modal; the id may point at an alt, which opens its parent on that version.
+    const openId = searchParams.get("artwork");
+    const openEntry = openId ? imageEntries.find(entry => entry.id === openId) : undefined;
+    const openImage = openEntry && (isAltInformation(openEntry) ? images.find(image => image.title === openEntry.parent) : openEntry);
+
+    function closeArtwork() {
+        // Opened by a card click: step back so the history has no leftover modal entry.
+        if ((location.state as {openedFromGallery?: boolean} | null)?.openedFromGallery) {
+            navigate(-1);
+            return;
         }
-        nextSearchParams.delete("page");
-        setSearchParams(nextSearchParams, {replace: true});
-    }
-
-    function replaceFilterGroup(group: string[], selectedValue?: string) {
-        const groupNames = new Set(group);
-        const remainingFilters = filters.toArray().filter(value => {
-            const filterName = value.startsWith("-") ? value.substring(1) : value;
-            return !groupNames.has(filterName);
-        });
-        applyFilters([...remainingFilters, ...(selectedValue ? [selectedValue] : [])].join("+"));
-    }
-
-    function toggleCharacter(character: string) {
-        const isSelected = filters.characters[character] === 1;
-        const characterNames = new Set(characters);
-        const remainingFilters = filters.toArray().filter(value => {
-            const filterName = value.startsWith("-") ? value.substring(1) : value;
-            return filterName !== character || !characterNames.has(filterName);
-        });
-        applyFilters([...remainingFilters, ...(isSelected ? [] : [character])].join("+"));
+        setSearchParams(current => {
+            const next = new URLSearchParams(current);
+            next.delete("artwork");
+            return next;
+        }, {replace: true, preventScrollReset: true});
     }
 
     return <>
-        <Container className="gallery-page fade" style={{maxWidth: "none"}}>
-            <header className="gallery-header">
-                <h1>Gallery</h1>
-                <p>Artwork arranged by date, tags, and alternate versions.</p>
-            </header>
-            <div className="gallery-layout">
-                <aside className="gallery-filter-column" aria-label="Gallery filters">
-                    <fieldset className="gallery-filters">
-                        <legend>Filter Settings</legend>
-                        <p className="gallery-filter-count" aria-live="polite">
-                            {displayedImages.length} {displayedImages.length === 1 ? "artwork" : "artworks"}
-                        </p>
-                        <RadioGroup value={filterMode} setValue={setFilterMode} options={["and", "or"]} label={"Filter Mode"}/>
-                        <div className="gallery-filter-control">
-                            <label className="gallery-filter-label" htmlFor="gallery-artist">Artist</label>
-                            <select
-                                id="gallery-artist"
-                                className="gallery-artist-select"
-                                value={selectedArtist}
-                                onChange={event => replaceFilterGroup(artists, event.target.value || undefined)}
-                            >
-                                <option value="">All artists</option>
-                                {artists.map(artist => <option key={artist} value={artist}>{artist}</option>)}
-                            </select>
-                        </div>
-                        <div className="gallery-filter-control">
-                            <span className="gallery-filter-label" id="gallery-characters-label">Characters</span>
-                            <div className="gallery-character-list" role="group" aria-labelledby="gallery-characters-label">
-                                {characters.map(character => {
-                                    const isSelected = filters.characters[character] === 1;
-                                    return <button
-                                        key={character}
-                                        type="button"
-                                        className="gallery-character-filter"
-                                        aria-pressed={isSelected}
-                                        onClick={() => toggleCharacter(character)}
-                                    >
-                                        <span className="gallery-character-check" aria-hidden="true">{isSelected ? "✓" : ""}</span>
-                                        {character}
-                                    </button>;
-                                })}
-                            </div>
-                        </div>
-                        <div className="gallery-filter-control">
-                            <span className="gallery-filter-label">Tags</span>
-                            <GallerySearchbar filters={filters} onChange={applyFilters}/>
-                        </div>
-                        <RadioGroup value={displayMode} setValue={setDisplayMode} options={["paginated", "monthly", "all"]} label={"Display Mode"} />
-                        {displayMode === "paginated" && <GalleryPagination page={page} setPage={setPage} maxPages={Math.ceil(yearMonthPairs.length / pageSize)}/>}
-                    </fieldset>
-                </aside>
-                <div className="gallery-results" ref={ref}>
-                    {(displayMode === "paginated" || displayMode === "monthly") && displayedMonths.map(value => {
-                        const imagesInMonth = imagesForMonth[value]
-                        return <section key={value} className="gallery-month">
-                            <h2 className="gallery-date">{value}</h2>
-                            <JustifiedGrid aspectRatioList={imagesInMonth.map(image => image.aspectRatio)} width={bounds.width}>
-                                {imagesInMonth.map(value => <GalleryImage key={value.id} value={value} searchParams={searchParams.toString()} hasAlts={altData.has(value.title)}/>)}
-                            </JustifiedGrid>
-                        </section>;
-                    })}
-                    {displayMode === "all" && <JustifiedGrid aspectRatioList={displayedImages.map(value => value.aspectRatio)} width={bounds.width} targetRowHeight={350}>
-                        {displayedImages.map(value => <GalleryImage key={value.id} value={value} searchParams={searchParams.toString()} hasAlts={altData.has(value.title)}/>)}
-                    </JustifiedGrid>}
-                    {displayedImages.length === 0 && <p className="gallery-empty">No artwork matches these filters.</p>}
-                </div>
+        <div className="gallery-page fade">
+            <PageHero title="Gallery" kicker="Artworks" variant="gallery" wide/>
+            <div className="page-body page-body-wide gallery-sections">
+                <GallerySection
+                    id="gallery-stickers"
+                    title="Stickers"
+                    kicker={`${stickers.length} ${stickers.length === 1 ? "set" : "sets"}`}
+                    images={stickers}
+                    altTitles={altTitles}
+                />
+                <GallerySection
+                    id="gallery-commissions"
+                    title="Commissions"
+                    kicker={`${commissions.length} ${commissions.length === 1 ? "artwork" : "artworks"}`}
+                    images={commissions}
+                    altTitles={altTitles}
+                />
             </div>
-        </Container>
-        {isDevelopment && <ArtworkUploader variant={"parent"}/>}
+        </div>
+        {openImage && <ArtworkModal
+            key={openImage.id}
+            image={openImage}
+            alts={altData.get(openImage.title) ?? []}
+            initialVariantId={openEntry?.id}
+            onClose={closeArtwork}
+        />}
+        {isDevelopment && !openImage && <ArtworkUploader variant={"parent"}/>}
     </>;
 }

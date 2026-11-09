@@ -38,7 +38,8 @@ export enum ArtTag {
     fullBody = 'Full Body',
     sequence = 'Sequence',
     sketchpage = 'Sketchpage',
-    sketch = 'Sketch'
+    sketch = 'Sketch',
+    sticker = 'Sticker'
 
 }
 

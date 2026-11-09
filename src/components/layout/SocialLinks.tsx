@@ -1,14 +1,5 @@
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
-import {faBluesky, faGithub, faTwitch, faTwitter} from "@fortawesome/free-brands-svg-icons";
-import {faBlog} from "@fortawesome/free-solid-svg-icons/faBlog";
-
-const socialLinks = [
-    {label: "Blog", href: "https://blog.kazeous.com", icon: faBlog},
-    {label: "GitHub", href: "https://github.com/kazeous", icon: faGithub},
-    {label: "Twitter", href: "https://twitter.com/kaze_ous", icon: faTwitter},
-    {label: "Twitch", href: "https://www.twitch.tv/kazeous", icon: faTwitch},
-    {label: "Bluesky", href: "https://bsky.app/profile/kazeous.bsky.social", icon: faBluesky},
-];
+import {socialLinks} from "./socialLinkData";
 
 export function SocialLinks({className}: {className: string}) {
     return <nav className={className} aria-label="Social links">

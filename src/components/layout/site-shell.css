@@ -32,10 +32,16 @@ body:has(.site-shell) {
     --on-surface-variant: var(--color-ink-2);
     --outline: var(--color-ink-2);
     --outline-variant: var(--color-rule);
+    --color-nav-paper: #dce8f3;
+    --color-nav-rule: #c1d5e8;
+    --header-height: 4rem;
 
     min-height: 100dvh;
     overflow-x: clip;
-    background: var(--color-paper);
+    /* A nav-colored band behind the translucent header keeps it the same tint on every page at rest. */
+    background:
+        linear-gradient(var(--color-nav-paper), var(--color-nav-paper)) top / 100% var(--header-height) no-repeat,
+        var(--color-paper);
     color: var(--color-ink);
     font-family: var(--font-body);
     font-size: var(--text-base);
@@ -81,108 +87,132 @@ body:has(.site-shell) {
 }
 
 .site-frame {
-    width: min(calc(100% - (2 * var(--space-lg))), 96rem);
+    width: min(calc(100% - (2 * var(--space-lg))), 120rem);
     margin-inline: auto;
-    border-inline: var(--rule-hair) solid var(--color-rule);
 }
 
+/* The header keeps the homepage's light-blue palette on every route. */
 .site-header {
+    --color-paper: var(--color-nav-paper);
+    --color-rule: var(--color-nav-rule);
+
     position: sticky;
     z-index: var(--z-sticky-nav);
     top: 0;
     display: block;
     padding: 0;
-    background: var(--color-paper);
+    background: color-mix(in srgb, var(--color-paper) 40%, transparent);
+    -webkit-backdrop-filter: blur(32px) saturate(1.6);
+    backdrop-filter: blur(32px) saturate(1.6);
+    transition:
+        background-color var(--dur-medium) var(--ease-out),
+        color var(--dur-medium) var(--ease-out);
 }
 
-.site-header-top {
-    display: grid;
-    min-height: 4.5rem;
-    grid-template-columns: minmax(10rem, 3fr) minmax(12rem, 6fr) minmax(8rem, 3fr);
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .site-header {
+        background: var(--color-paper);
+    }
+}
+
+/* Over a dark page hero (see SiteShell): darker glass with light text, back to normal once scrolled past. */
+.site-header.is-over-hero {
+    --color-rule: oklch(100% 0 0 / 0.16);
+
+    background: oklch(18% 0.03 248 / 0.28);
+    color: white;
+}
+
+.site-header.is-over-hero .site-nav .site-nav-link.is-active {
+    background: oklch(100% 0 0 / 0.18);
+    color: white;
+}
+
+.site-header.is-over-hero .site-mobile-destinations {
+    --color-rule: var(--color-nav-rule);
+
+    color: var(--color-ink);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .site-header.is-over-hero {
+        background: oklch(18% 0.03 248 / 0.85);
+    }
+}
+
+.site-header-bar {
+    display: flex;
+    min-height: var(--header-height);
     align-items: stretch;
+    justify-content: flex-start;
     border-bottom: var(--rule-hair) solid var(--color-rule);
 }
 
-.site-wordmark,
-.site-discipline,
-.site-social-links {
-    display: flex;
-    min-height: 4.5rem;
-    align-items: center;
-}
-
+/* No right padding: the page-title clip edge sits right at the end of "KAZE", so the title emerges from behind it. */
 .site-wordmark {
+    display: flex;
+    flex: none;
+    min-height: var(--header-height);
+    align-items: center;
     justify-content: flex-start;
-    padding-inline: var(--space-md);
-    border-right: var(--rule-hair) solid var(--color-rule);
+    padding-left: var(--space-md);
     font-family: var(--font-wordmark) !important;
     font-size: var(--text-xl);
     line-height: 1;
 }
 
-.site-discipline {
-    margin: 0;
-    padding-inline: var(--space-md);
-    color: var(--color-ink-2);
-    font-size: var(--text-sm);
-    white-space: nowrap;
-}
-
-.site-social-links {
-    display: flex;
-    align-items: stretch;
-    justify-content: stretch;
-    gap: 0;
-    border-left: var(--rule-hair) solid var(--color-rule);
-}
-
-.site-header .site-social-links a {
+/* Compact page title: hidden behind KAZE until the hero <h1> scrolls up under the header, then slides out. */
+.site-header-title {
     display: flex;
     min-width: 0;
-    flex: 1 1 0;
-    min-height: 4.5rem;
     align-items: center;
-    justify-content: center;
-    line-height: 1;
+    margin-right: var(--space-md);
+    overflow: hidden;
 }
 
-.site-social-links a:hover,
-.site-social-links a:active {
-    background: var(--color-ink);
-    color: var(--color-paper);
-}
-
-.site-social-links svg {
+.site-header .site-header-title-text {
     display: block;
-    width: var(--space-sm);
-    height: var(--space-sm);
-    margin: auto;
+    min-width: 0;
+    margin-left: 0.85rem;
+    padding-left: 0.85rem;
+    overflow: hidden;
+    border-left: var(--rule-hair) solid color-mix(in srgb, currentColor 35%, transparent);
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    line-height: 1.1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    opacity: 0;
+    transform: translateX(calc(-100% - 0.85rem));
+    transition:
+        transform 450ms var(--ease-out),
+        opacity 300ms var(--ease-out);
+}
+
+.site-header-title.is-visible .site-header-title-text {
+    opacity: 1;
+    transform: none;
 }
 
 .site-nav {
     position: static !important;
-    display: grid !important;
+    display: flex !important;
+    flex-direction: row !important;
     height: auto !important;
-    margin: 0 auto !important;
+    margin: 0 0 0 auto !important;
     padding: 0 !important;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: stretch !important;
     gap: 0 !important;
-    border-bottom: var(--rule-hair) solid var(--color-rule);
-    background: var(--color-paper) !important;
+    background: transparent !important;
 }
 
 .site-nav-link {
     display: flex;
-    min-height: 3.5rem;
+    min-height: var(--header-height);
     align-items: center;
-    justify-content: space-between;
-    padding-inline: var(--space-md);
-    border-right: var(--rule-hair) solid var(--color-rule);
+    justify-content: center;
+    padding-inline: var(--space-sm);
     white-space: nowrap;
-}
-
-.site-nav-link:last-child {
-    border-right: 0;
 }
 
 .site-nav-link:hover,
@@ -202,14 +232,14 @@ body:has(.site-shell) {
 
 .site-main {
     display: block;
-    max-width: 96rem !important;
+    max-width: 120rem !important;
     margin-block: 0 !important;
     padding: 0 !important;
     background: var(--color-paper);
 }
 
 .site-main-route {
-    min-height: calc(100dvh - 13rem);
+    min-height: calc(100dvh - 9rem);
     border-bottom: var(--rule-hair) solid var(--color-rule);
 }
 
@@ -266,21 +296,25 @@ body:has(.site-shell) {
     margin: 0;
 }
 
+.site-footer a {
+    color: var(--color-ink);
+    font-weight: 600;
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+    text-underline-offset: 3px;
+    transition: color var(--dur-short) var(--ease-out), text-decoration-color var(--dur-short) var(--ease-out);
+}
+
+.site-footer a:hover {
+    color: var(--color-accent);
+    text-decoration-color: currentColor;
+}
+
 @media (max-width: 60rem) {
     .site-frame {
         width: calc(100% - (2 * var(--space-sm)));
     }
 
-    .site-header-top {
-        grid-template-columns: minmax(0, 1fr) auto;
-    }
-
-    .site-wordmark {
-        border-right: var(--rule-hair) solid var(--color-rule);
-    }
-
-    .site-discipline,
-    .site-social-links,
     .site-nav {
         display: none !important;
     }
@@ -288,13 +322,13 @@ body:has(.site-shell) {
     .site-mobile-menu {
         position: relative;
         display: block;
-        margin: 0;
+        margin: 0 0 0 auto;
     }
 
     .site-mobile-menu summary {
         display: flex;
         min-width: 5.5rem;
-        min-height: 4.5rem;
+        min-height: var(--header-height);
         align-items: center;
         justify-content: center;
         padding-inline: var(--space-sm);
@@ -327,17 +361,7 @@ body:has(.site-shell) {
 
     .site-mobile-destinations .site-nav-link {
         min-height: 4rem;
-        border-right: var(--rule-hair) solid var(--color-rule);
-        border-bottom: var(--rule-hair) solid var(--color-rule);
         white-space: nowrap !important;
-    }
-
-    .site-mobile-destinations .site-nav-link:nth-child(even) {
-        border-right: 0;
-    }
-
-    .site-mobile-destinations .site-nav-link:nth-last-child(-n + 2) {
-        border-bottom: 0;
     }
 }
 
@@ -346,14 +370,13 @@ body:has(.site-shell) {
         width: calc(100% - (2 * var(--space-xs)));
     }
 
-    .site-wordmark,
-    .site-mobile-menu summary {
-        min-height: 4rem;
+    .site-wordmark {
+        padding-left: var(--space-sm);
+        font-size: var(--text-lg);
     }
 
-    .site-wordmark {
-        padding-inline: var(--space-sm);
-        font-size: var(--text-lg);
+    .site-header .site-header-title-text {
+        font-size: var(--text-md);
     }
 
     .site-footer {

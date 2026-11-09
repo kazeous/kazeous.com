@@ -1,13 +1,12 @@
-import {useEffect, useRef, type ReactNode} from "react";
+import {useEffect, useRef, useState, type ReactNode} from "react";
 import {NavLink, Link, useLocation} from "react-router-dom";
-import {SocialLinks} from "./SocialLinks";
 import "./site-shell.css";
 
 const navigation = [
-    {label: "Gallery", to: "/gallery"},
-    {label: "Projects", to: "/projects"},
-    {label: "Characters", to: "/lore"},
     {label: "About", to: "/about"},
+    {label: "Gallery", to: "/gallery"},
+    {label: "OC", to: "/lore"},
+    {label: "Projects", to: "/projects"},
 ];
 
 function DestinationLinks({className, onNavigate}: Readonly<{className: string; onNavigate?: () => void}>) {
@@ -19,8 +18,7 @@ function DestinationLinks({className, onNavigate}: Readonly<{className: string; 
                 onClick={onNavigate}
                 className={({isActive}) => isActive ? "site-nav-link is-active" : "site-nav-link"}
             >
-                <span>{destination.label}</span>
-                <span aria-hidden="true">↗</span>
+                {destination.label}
             </NavLink>
         )}
     </nav>;
@@ -31,16 +29,54 @@ export function SiteShell({children}: Readonly<{children: ReactNode}>) {
     const menuRef = useRef<HTMLDetailsElement>(null);
     const isHome = location.pathname === "/";
 
+    const headerRef = useRef<HTMLElement>(null);
+    const [isOverHero, setIsOverHero] = useState(false);
+    const [heroTitle, setHeroTitle] = useState<string | null>(null);
+    const [isHeroTitleHidden, setIsHeroTitleHidden] = useState(false);
+
+    // New page: close the mobile menu and start at the top (e.g. after following the footer's Privacy Policy link).
+    // Keyed on pathname only, so the gallery's ?artwork= modal opens and closes without jumping.
     useEffect(() => {
         menuRef.current?.removeAttribute("open");
+        window.scrollTo(0, 0);
+    }, [location.pathname]);
+
+    // A page hero ([data-site-hero]) under the glass header switches the header to light-on-dark,
+    // and once the hero's <h1> has scrolled up behind the header, a compact copy slides out next to KAZE.
+    useEffect(() => {
+        let frame = 0;
+        const update = () => {
+            const hero = document.querySelector<HTMLElement>("[data-site-hero]");
+            const title = hero?.querySelector("h1");
+            const header = headerRef.current;
+            const headerBottom = header?.offsetHeight ?? 0;
+            setIsOverHero(!!hero && !!header && hero.getBoundingClientRect().bottom > headerBottom);
+            setHeroTitle(title?.textContent ?? null);
+            setIsHeroTitleHidden(!!title && !!header && title.getBoundingClientRect().bottom <= headerBottom);
+        };
+        const schedule = () => {
+            cancelAnimationFrame(frame);
+            frame = requestAnimationFrame(update);
+        };
+        update();
+        window.addEventListener("scroll", schedule, {passive: true});
+        window.addEventListener("resize", schedule);
+        return () => {
+            cancelAnimationFrame(frame);
+            window.removeEventListener("scroll", schedule);
+            window.removeEventListener("resize", schedule);
+        };
     }, [location.pathname]);
 
     return <div className={isHome ? "site-shell site-shell-home" : "site-shell"}>
-        <header className="site-header">
-            {!isHome && <div className="site-header-top site-frame">
+        <header className={isOverHero ? "site-header is-over-hero" : "site-header"} ref={headerRef}>
+            <div className="site-header-bar site-frame">
                 <Link className="site-wordmark" to="/" aria-label="Kaze home">Kaze</Link>
-                <p className="site-discipline">A dragon-shark wandering on a path.</p>
-                <SocialLinks className="site-social-links"/>
+                {/* Decorative repeat of the page's <h1>, so it stays hidden from assistive tech. */}
+                {heroTitle && <span className={isHeroTitleHidden ? "site-header-title is-visible" : "site-header-title"} aria-hidden="true">
+                    <span className="site-header-title-text">{heroTitle}</span>
+                </span>}
+                <DestinationLinks className="site-nav"/>
                 <details className="site-mobile-menu" ref={menuRef}>
                     <summary>Menu</summary>
                     <DestinationLinks
@@ -48,8 +84,7 @@ export function SiteShell({children}: Readonly<{children: ReactNode}>) {
                         onNavigate={() => menuRef.current?.removeAttribute("open")}
                     />
                 </details>
-            </div>}
-            <DestinationLinks className="site-nav site-frame"/>
+            </div>
         </header>
 
         <main className={`site-main site-frame${isHome ? " site-main-home" : " site-main-route"}`}>
@@ -57,7 +92,7 @@ export function SiteShell({children}: Readonly<{children: ReactNode}>) {
         </main>
 
         {!isHome && <footer className="site-footer site-frame">
-            <p>© {new Date().getFullYear()} Kazeous</p>
+            <p>© {new Date().getFullYear()} Kazeous Production - <Link to="/privacy-policy">Privacy Policy</Link></p>
         </footer>}
     </div>;
 }

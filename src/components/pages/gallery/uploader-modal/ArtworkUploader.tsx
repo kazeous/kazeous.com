@@ -49,7 +49,7 @@ export function ArtworkUploader(props: AltProps | ParentProps) {
     const {register, handleSubmit, control, reset, formState: {isSubmitting}} = useForm<ImageValues>({
         defaultValues: {
             tags: props.variant === "alt" ? props.parent.tags as ArtTag[] : [],
-            characters: props.variant === "alt" ? props.parent.characters : ["Yoichi"],
+            characters: props.variant === "alt" ? props.parent.characters : ["Kaze Hishou"],
             href: props.variant === "alt" ? props.parent.href : "",
             published: dayjs().format("YYYY-MM-DD"),
             hidden: false
