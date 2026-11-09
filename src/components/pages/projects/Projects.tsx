@@ -5,35 +5,11 @@ import {faBoxOpen, faCodeFork, faGlobe, faStar, faTriangleExclamation} from "@fo
 import {faGithub} from "@fortawesome/free-brands-svg-icons";
 import {PageHero} from "../../layout/PageHero.tsx";
 import {SectionHeading} from "../../layout/SectionHeading.tsx";
+import {formatUpdatedDate, GITHUB_PROFILE_URL, GITHUB_REPOSITORIES_URL, type GitHubRepository} from "./github.ts";
+import {featuredProjects} from "./projects.ts";
+import {FeaturedProjectCard} from "./FeaturedProjectCard.tsx";
+import {StatusBanner} from "./StatusBanner.tsx";
 import "./projects.css";
-
-type GitHubRepository = {
-    id: number;
-    name: string;
-    html_url: string;
-    description: string | null;
-    homepage: string | null;
-    language: string | null;
-    stargazers_count: number;
-    forks_count: number;
-    fork: boolean;
-    archived: boolean;
-    pushed_at: string;
-    topics: string[];
-};
-
-const GITHUB_USERNAME = "kazeous";
-const GITHUB_PROFILE_URL = `https://github.com/${GITHUB_USERNAME}`;
-const GITHUB_REPOSITORIES_URL =
-    `https://api.github.com/users/${GITHUB_USERNAME}/repos?sort=pushed&direction=desc&per_page=100`;
-
-function formatUpdatedDate(date: string) {
-    return new Intl.DateTimeFormat("en", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-    }).format(new Date(date));
-}
 
 /** The repo name is a stretched link (its ::after covers the card); the homepage link sits above it. */
 function ProjectCard({project}: Readonly<{project: GitHubRepository}>) {
@@ -95,9 +71,12 @@ function ProjectsNotice({icon, title, children}: Readonly<{icon: typeof faBoxOpe
     </div>;
 }
 
+/** Featured repos are listed once, in Featured, and left out of the GitHub grid below. */
+const featuredRepoNames = new Set(featuredProjects.flatMap(project => project.repo ? [project.repo.toLowerCase()] : []));
+
 export function Projects() {
     useDocumentTitle("Projects - kazeous.com");
-    const [projects, setProjects] = useState<GitHubRepository[]>([]);
+    const [repositories, setRepositories] = useState<GitHubRepository[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [hasError, setHasError] = useState(false);
 
@@ -115,8 +94,7 @@ export function Projects() {
                     throw new Error(`GitHub returned ${response.status}`);
                 }
 
-                const repositories = await response.json() as GitHubRepository[];
-                setProjects(repositories.filter(repository => !repository.fork));
+                setRepositories(await response.json() as GitHubRepository[]);
             } catch (error) {
                 if ((error as Error).name !== "AbortError") {
                     setHasError(true);
@@ -132,6 +110,11 @@ export function Projects() {
         return () => controller.abort();
     }, []);
 
+    // Featured cards look their repo up in the full list, forks included; the grid shows the rest.
+    const repositoryByName = new Map(repositories.map(repository => [repository.full_name.toLowerCase(), repository]));
+    const projects = repositories.filter(repository =>
+        !repository.fork && !featuredRepoNames.has(repository.full_name.toLowerCase()));
+
     const kicker = isLoading
         ? "Loading…"
         : hasError ? "GitHub" : `${projects.length} public ${projects.length === 1 ? "repository" : "repositories"}`;
@@ -144,32 +127,54 @@ export function Projects() {
             variant="projects"
             wide
         />
-        <div className="page-body page-body-wide projects-sections">
-            <section className="projects-section" aria-labelledby="projects-repositories">
-                <SectionHeading
-                    id="projects-repositories"
-                    title="Repositories"
-                    kicker={kicker}
-                    action={<a className="page-pill-link" href={GITHUB_PROFILE_URL} target="_blank" rel="noopener noreferrer">
-                        <FontAwesomeIcon icon={faGithub} aria-hidden="true"/> GitHub
-                    </a>}
-                />
+        <div className="page-body page-body-wide projects-body">
+            <StatusBanner/>
 
-                {hasError && <ProjectsNotice icon={faTriangleExclamation} title="Could not load the projects right now.">
-                    <p>You can still find all of them on GitHub.</p>
-                    <a className="page-pill-link" href={`${GITHUB_PROFILE_URL}?tab=repositories`} target="_blank" rel="noopener noreferrer">
-                        View repositories
-                    </a>
-                </ProjectsNotice>}
+            <div className="projects-sections">
+                {featuredProjects.length > 0 && <section className="projects-section" aria-labelledby="projects-featured">
+                    <SectionHeading
+                        id="projects-featured"
+                        title="Featured"
+                        kicker={`${featuredProjects.length} ${featuredProjects.length === 1 ? "project" : "projects"}`}
+                    />
+                    <div className="featured-grid">
+                        {featuredProjects.map(project => <FeaturedProjectCard
+                            key={project.name}
+                            project={project}
+                            repository={project.repo ? repositoryByName.get(project.repo.toLowerCase()) : undefined}
+                        />)}
+                    </div>
+                </section>}
 
-                {!hasError && <div className="projects-grid">
-                    {isLoading
-                        ? Array.from({length: 6}, (_, index) => <ProjectSkeleton key={index}/>)
-                        : projects.map(project => <ProjectCard project={project} key={project.id}/>)}
-                </div>}
+                <section className="projects-section" aria-labelledby="projects-repositories">
+                    <SectionHeading
+                        id="projects-repositories"
+                        title="Repositories"
+                        kicker={kicker}
+                        action={<a className="page-pill-link" href={GITHUB_PROFILE_URL} target="_blank" rel="noopener noreferrer">
+                            <FontAwesomeIcon icon={faGithub} aria-hidden="true"/> GitHub
+                        </a>}
+                    />
 
-                {!isLoading && !hasError && projects.length === 0 && <ProjectsNotice icon={faBoxOpen} title="No public projects yet."/>}
-            </section>
+                    {hasError && <ProjectsNotice icon={faTriangleExclamation} title="Could not load the projects right now.">
+                        <p>You can still find all of them on GitHub.</p>
+                        <a className="page-pill-link" href={`${GITHUB_PROFILE_URL}?tab=repositories`} target="_blank" rel="noopener noreferrer">
+                            View repositories
+                        </a>
+                    </ProjectsNotice>}
+
+                    {!hasError && <div className="projects-grid">
+                        {isLoading
+                            ? Array.from({length: 6}, (_, index) => <ProjectSkeleton key={index}/>)
+                            : projects.map(project => <ProjectCard project={project} key={project.id}/>)}
+                    </div>}
+
+                    {!isLoading && !hasError && projects.length === 0 && <ProjectsNotice
+                        icon={faBoxOpen}
+                        title={featuredRepoNames.size > 0 ? "Every public repository is featured above." : "No public projects yet."}
+                    />}
+                </section>
+            </div>
         </div>
     </div>;
 }
