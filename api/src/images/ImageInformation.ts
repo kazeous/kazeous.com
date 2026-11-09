@@ -27,6 +27,8 @@ export interface ImageInformation extends ImageBase {
     title: string;
     published: string;
     artist: string;
+    /** Plain text shown under the title in the artwork modal; any http(s) URL in it becomes a link. */
+    description?: string;
 }
 
 export type AltType = 'extra' | 'cropped' | 'recolor' | { altNumber?: number, pageNumber?: number };

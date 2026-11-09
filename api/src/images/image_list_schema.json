@@ -134,6 +134,10 @@
             },
             "artist": {
               "type": "string"
+            },
+            "description": {
+              "type": "string",
+              "description": "Plain text shown under the title in the artwork modal; any http(s) URL in it becomes a link."
             }
           },
           "required": [

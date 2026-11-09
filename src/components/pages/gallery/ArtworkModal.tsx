@@ -95,6 +95,8 @@ export function ArtworkModal({image, alts, initialVariantId, onClose}: Readonly<
                     <FontAwesomeIcon icon={faCircleCheck}/> {isSticker ? "Sticker set" : "Commissioned"}
                 </p>
 
+                {image.description && <p className="am-description"><LinkifiedText text={image.description}/></p>}
+
                 {selected.characters.length > 0 && <section className="am-block" aria-label="Featured characters">
                     <h3>Featured</h3>
                     {selected.characters.map(character => {
@@ -147,6 +149,13 @@ export function ArtworkModal({image, alts, initialVariantId, onClose}: Readonly<
         {isDevelopment && <ArtworkUploader variant={"alt"} parent={image}/>}
         {isViewerOpen && <ImageViewer src={selected.webp} title={image.title} onClose={() => setIsViewerOpen(false)}/>}
     </dialog>, document.body);
+}
+
+/** Plain text with every http(s) URL turned into a link; the capturing split puts the URLs at odd indexes. */
+function LinkifiedText({text}: Readonly<{text: string}>) {
+    return text.split(/(https?:\/\/\S+)/).map((part, index) => index % 2 === 1
+        ? <a key={index} href={part} target="_blank" rel="noreferrer">{part}</a>
+        : part);
 }
 
 function ArtworkMenu({originalUrl, postUrl}: Readonly<{originalUrl: string; postUrl?: string}>) {

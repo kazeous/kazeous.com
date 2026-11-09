@@ -334,6 +334,20 @@ dialog.artwork-modal .am-title {
     font-weight: 700;
 }
 
+.am-description {
+    color: var(--gx-ink-2);
+    font-size: var(--text-sm);
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+}
+
+/* The modal is portaled outside the site shell, so its links need their own colour and underline. */
+.am-description a {
+    color: var(--color-accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
 .am-block {
     display: grid;
     gap: var(--space-2xs);
