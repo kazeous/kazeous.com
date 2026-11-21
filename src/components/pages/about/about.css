@@ -60,6 +60,22 @@
     padding: 0 !important;
 }
 
+.list.changelog-entries > li:has(.changelog-changes) {
+    padding: var(--space-2xs) var(--space-sm);
+    white-space: normal;
+    cursor: auto;
+}
+
+.changelog-changes {
+    margin: var(--space-2xs) 0 0;
+    padding: 0 0 0 1.25rem;
+    list-style: disc;
+}
+
+.changelog-changes > li + li {
+    margin-block-start: var(--space-3xs);
+}
+
 /* ---------- Bento grid + cards ---------- */
 .about-bento {
     display: grid;
