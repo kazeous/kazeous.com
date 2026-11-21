@@ -1,6 +1,7 @@
-/* Hallmark · genre: editorial · macrostructure: Split Studio / Long Document
+/* Hallmark · pre-emit critique: P4 H4 E4 S5 R5 V4
+ * genre: editorial · macrostructure: Split Studio / Long Document
  * design-system: design.md · designed-as-app · tone: technical-editorial
- * theme: studied-DNA · anchor: cyan-blue 232 · nav: N9 · footer: Ft2
+ * anchor: cyan-blue 232 · inset glass navigation adapted from Reyuu homepage
  */
 @import "../../../tokens.css";
 
@@ -32,16 +33,13 @@ body:has(.site-shell) {
     --on-surface-variant: var(--color-ink-2);
     --outline: var(--color-ink-2);
     --outline-variant: var(--color-rule);
-    --color-nav-paper: #dce8f3;
-    --color-nav-rule: #c1d5e8;
-    --header-height: 4rem;
+    --header-inset: var(--space-lg);
+    --header-bar-height: 4.25rem;
+    --header-height: calc(var(--header-inset) + var(--header-bar-height));
 
     min-height: 100dvh;
     overflow-x: clip;
-    /* A nav-colored band behind the translucent header keeps it the same tint on every page at rest. */
-    background:
-        linear-gradient(var(--color-nav-paper), var(--color-nav-paper)) top / 100% var(--header-height) no-repeat,
-        var(--color-paper);
+    background: var(--color-paper);
     color: var(--color-ink);
     font-family: var(--font-body);
     font-size: var(--text-base);
@@ -91,102 +89,93 @@ body:has(.site-shell) {
     margin-inline: auto;
 }
 
-/* The header keeps the homepage's light-blue palette on every route. */
 .site-header {
-    --color-paper: var(--color-nav-paper);
-    --color-rule: var(--color-nav-rule);
+    --header-gutter: clamp(var(--space-md), 3vw, var(--space-2xl));
+    --nav-ink: var(--color-paper-2);
+    --nav-muted: color-mix(in oklch, var(--nav-ink) 82%, var(--color-ink));
+    --nav-rule: color-mix(in srgb, var(--nav-ink) 22%, transparent);
+    --nav-glass: color-mix(in srgb, var(--color-ink) 88%, transparent);
+    --nav-highlight: color-mix(in srgb, var(--color-accent) 25%, transparent);
+    --nav-radius: 1rem;
+    --nav-control-radius: 0.625rem;
+    --nav-target-height: 2.75rem;
 
     position: sticky;
     z-index: var(--z-sticky-nav);
     top: 0;
     display: block;
-    padding: 0;
-    background: color-mix(in srgb, var(--color-paper) 40%, transparent);
-    -webkit-backdrop-filter: blur(32px) saturate(1.6);
-    backdrop-filter: blur(32px) saturate(1.6);
-    transition:
-        background-color var(--dur-medium) var(--ease-out),
-        color var(--dur-medium) var(--ease-out);
-}
-
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    .site-header {
-        background: var(--color-paper);
-    }
-}
-
-/* Over a dark page hero (see SiteShell): darker glass with light text, back to normal once scrolled past. */
-.site-header.is-over-hero {
-    --color-rule: oklch(100% 0 0 / 0.16);
-
-    background: oklch(18% 0.03 248 / 0.28);
-    color: white;
-}
-
-.site-header.is-over-hero .site-nav .site-nav-link.is-active {
-    background: oklch(100% 0 0 / 0.18);
-    color: white;
-}
-
-.site-header.is-over-hero .site-mobile-destinations {
-    --color-rule: var(--color-nav-rule);
-
-    color: var(--color-ink);
-}
-
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    .site-header.is-over-hero {
-        background: oklch(18% 0.03 248 / 0.85);
-    }
+    padding: var(--header-inset) 0 0;
+    background: transparent;
+    pointer-events: none;
 }
 
 .site-header-bar {
-    display: flex;
-    min-height: var(--header-height);
-    align-items: stretch;
-    justify-content: flex-start;
-    border-bottom: var(--rule-hair) solid var(--color-rule);
+    position: relative;
+    display: grid;
+    width: calc(100% - 2 * var(--header-gutter));
+    min-height: var(--header-bar-height);
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: var(--space-sm);
+    margin-inline: auto;
+    padding: var(--space-3xs) var(--space-sm);
+    border: var(--rule-hair) solid var(--nav-rule);
+    border-radius: var(--nav-radius);
+    background: var(--color-ink);
+    color: var(--nav-ink);
+    pointer-events: auto;
 }
 
-/* No right padding: the page-title clip edge sits right at the end of "KAZE", so the title emerges from behind it. */
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .site-header-bar {
+        background: var(--nav-glass);
+        -webkit-backdrop-filter: blur(16px);
+        backdrop-filter: blur(16px);
+    }
+}
+
+.site-header-identity {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+}
+
 .site-wordmark {
     display: flex;
     flex: none;
-    min-height: var(--header-height);
+    min-height: var(--nav-target-height);
     align-items: center;
-    justify-content: flex-start;
-    padding-left: var(--space-md);
+    padding-inline: var(--space-xs);
+    border-radius: var(--nav-control-radius);
+    color: var(--nav-ink);
     font-family: var(--font-wordmark) !important;
-    font-size: var(--text-xl);
+    font-size: var(--text-lg);
     line-height: 1;
 }
 
-/* Compact page title: hidden behind KAZE until the hero <h1> scrolls up under the header, then slides out. */
 .site-header-title {
     display: flex;
     min-width: 0;
     align-items: center;
-    margin-right: var(--space-md);
     overflow: hidden;
 }
 
 .site-header .site-header-title-text {
     display: block;
     min-width: 0;
-    margin-left: 0.85rem;
-    padding-left: 0.85rem;
+    padding-left: var(--space-xs);
     overflow: hidden;
-    border-left: var(--rule-hair) solid color-mix(in srgb, currentColor 35%, transparent);
+    border-left: var(--rule-hair) solid var(--nav-rule);
     font-family: var(--font-display);
-    font-size: var(--text-lg);
+    font-size: var(--text-md);
     line-height: 1.1;
     text-overflow: ellipsis;
     white-space: nowrap;
     opacity: 0;
-    transform: translateX(calc(-100% - 0.85rem));
+    transform: translateX(-100%);
     transition:
-        transform 450ms var(--ease-out),
-        opacity 300ms var(--ease-out);
+        transform var(--dur-medium) var(--ease-out),
+        opacity var(--dur-medium) var(--ease-out);
 }
 
 .site-header-title.is-visible .site-header-title-text {
@@ -199,31 +188,38 @@ body:has(.site-shell) {
     display: flex !important;
     flex-direction: row !important;
     height: auto !important;
-    margin: 0 0 0 auto !important;
+    margin: 0 !important;
     padding: 0 !important;
-    align-items: stretch !important;
-    gap: 0 !important;
+    align-items: center !important;
+    gap: var(--space-2xs) !important;
     background: transparent !important;
 }
 
-.site-nav-link {
+.site-nav-link,
+.site-mobile-menu summary {
     display: flex;
-    min-height: var(--header-height);
+    min-height: var(--nav-target-height);
     align-items: center;
     justify-content: center;
     padding-inline: var(--space-sm);
+    border-radius: var(--nav-control-radius);
+    color: var(--nav-muted);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    line-height: 1;
     white-space: nowrap;
 }
 
-.site-nav-link:hover,
-.site-nav-link:active {
-    background: var(--color-accent);
-    color: var(--color-accent-ink);
+.site-header-bar :is(.site-nav-link, .site-wordmark, summary):is(:hover, :active),
+.site-nav-link[aria-current="page"],
+.site-mobile-menu[open] summary {
+    background: var(--nav-highlight);
+    color: var(--nav-ink);
 }
 
-.site-nav-link.is-active {
-    background: var(--color-ink);
-    color: var(--color-paper);
+.site-header-bar :where(a, summary):focus-visible {
+    outline-color: var(--nav-ink);
+    outline-offset: -2px;
 }
 
 .site-mobile-menu {
@@ -314,54 +310,60 @@ body:has(.site-shell) {
     .site-frame {
         width: calc(100% - (2 * var(--space-sm)));
     }
+}
+
+@media (max-width: 42rem) {
+    .site-shell {
+        --header-inset: var(--space-sm);
+        --header-bar-height: 3.75rem;
+    }
+
+    .site-header {
+        --header-gutter: var(--space-sm);
+    }
+
+    .site-header-bar {
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: var(--space-2xs);
+        padding-inline: var(--space-2xs);
+    }
 
     .site-nav {
         display: none !important;
     }
 
     .site-mobile-menu {
-        position: relative;
         display: block;
-        margin: 0 0 0 auto;
     }
 
     .site-mobile-menu summary {
-        display: flex;
-        min-width: 5.5rem;
-        min-height: var(--header-height);
-        align-items: center;
-        justify-content: center;
-        padding-inline: var(--space-sm);
+        min-width: 4.5rem;
         cursor: pointer;
         list-style: none;
-        white-space: nowrap;
     }
 
     .site-mobile-menu summary::-webkit-details-marker {
         display: none;
     }
 
-    .site-mobile-menu[open] summary {
-        background: var(--color-ink);
-        color: var(--color-paper);
+    .site-mobile-menu:not([open]) .site-mobile-destinations {
+        display: none !important;
     }
 
     .site-mobile-destinations {
         position: absolute !important;
-        top: 100%;
-        right: calc(-1 * var(--rule-hair));
+        inset-block-start: calc(100% + var(--space-sm));
+        inset-inline-end: 0;
         display: grid !important;
-        width: min(22rem, calc(100dvi - (2 * var(--space-sm))));
+        width: min(19rem, calc(100dvi - 2 * (var(--header-gutter) + var(--space-2xs) + var(--rule-hair))));
         height: auto !important;
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        gap: 0 !important;
-        border: var(--rule-hair) solid var(--color-rule);
-        background: var(--color-paper) !important;
-    }
-
-    .site-mobile-destinations .site-nav-link {
-        min-height: 4rem;
-        white-space: nowrap !important;
+        gap: var(--space-3xs) !important;
+        margin: 0 !important;
+        padding: var(--space-2xs) !important;
+        border: var(--rule-hair) solid var(--nav-rule);
+        border-radius: var(--nav-radius);
+        background: var(--color-ink) !important;
     }
 }
 
@@ -371,12 +373,11 @@ body:has(.site-shell) {
     }
 
     .site-wordmark {
-        padding-left: var(--space-sm);
-        font-size: var(--text-lg);
+        font-size: var(--text-md);
     }
 
     .site-header .site-header-title-text {
-        font-size: var(--text-md);
+        font-size: var(--text-base);
     }
 
     .site-footer {

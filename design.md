@@ -61,7 +61,7 @@ Use the named 4-point scale in `tokens.css`. Page CSS must consume tokens rather
 
 ## What pages must share
 
-- Kaze wordmark and the two-tier N9 masthead.
+- Kaze wordmark, inset dark glass navigation, centered desktop links, and a compact mobile menu.
 - Cool paper palette, cyan-blue accent, and the three-face type system.
 - Square controls, hairline rules, no decorative shadows or gradients.
 - Ft2 inline footer and the same focus treatment.

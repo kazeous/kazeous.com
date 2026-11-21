@@ -24,7 +24,7 @@
 /* Full-bleed: break out of the centered page frame to span the whole viewport,
    and slide up under the translucent sticky header so the banner shows through the glass. */
 .page-hero {
-    --page-header-offset: calc(var(--header-height) + var(--rule-hair));
+    --page-header-offset: var(--header-height);
 
     position: relative;
     display: flex;
@@ -132,7 +132,7 @@
     padding-bottom: var(--space-2xl);
 }
 
-/* Wide variant: spans the whole navbar frame, inset like the KAZE wordmark so edges line up. */
+/* Wide variant: uses the full page frame with an inset on both sides. */
 .page-body-wide,
 .page-hero-wide .page-hero-copy {
     width: calc(100% - 2 * var(--space-md));

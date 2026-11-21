@@ -16,7 +16,7 @@ function DestinationLinks({className, onNavigate}: Readonly<{className: string; 
                 to={destination.to}
                 key={destination.to}
                 onClick={onNavigate}
-                className={({isActive}) => isActive ? "site-nav-link is-active" : "site-nav-link"}
+                className="site-nav-link"
             >
                 {destination.label}
             </NavLink>
@@ -30,9 +30,9 @@ export function SiteShell({children}: Readonly<{children: ReactNode}>) {
     const isHome = location.pathname === "/";
 
     const headerRef = useRef<HTMLElement>(null);
-    const [isOverHero, setIsOverHero] = useState(false);
     const [heroTitle, setHeroTitle] = useState<string | null>(null);
     const [isHeroTitleHidden, setIsHeroTitleHidden] = useState(false);
+    const closeMenu = () => menuRef.current?.removeAttribute("open");
 
     // New page: close the mobile menu and start at the top (e.g. after following the footer's Privacy Policy link).
     // Keyed on pathname only, so the gallery's ?artwork= modal opens and closes without jumping.
@@ -41,16 +41,14 @@ export function SiteShell({children}: Readonly<{children: ReactNode}>) {
         window.scrollTo(0, 0);
     }, [location.pathname]);
 
-    // A page hero ([data-site-hero]) under the glass header switches the header to light-on-dark,
-    // and once the hero's <h1> has scrolled up behind the header, a compact copy slides out next to KAZE.
+    // Repeat the page title next to the wordmark once the hero heading scrolls behind the bar.
     useEffect(() => {
         let frame = 0;
         const update = () => {
             const hero = document.querySelector<HTMLElement>("[data-site-hero]");
             const title = hero?.querySelector("h1");
             const header = headerRef.current;
-            const headerBottom = header?.offsetHeight ?? 0;
-            setIsOverHero(!!hero && !!header && hero.getBoundingClientRect().bottom > headerBottom);
+            const headerBottom = header?.getBoundingClientRect().bottom ?? 0;
             setHeroTitle(title?.textContent ?? null);
             setIsHeroTitleHidden(!!title && !!header && title.getBoundingClientRect().bottom <= headerBottom);
         };
@@ -69,20 +67,28 @@ export function SiteShell({children}: Readonly<{children: ReactNode}>) {
     }, [location.pathname]);
 
     return <div className={isHome ? "site-shell site-shell-home" : "site-shell"}>
-        <header className={isOverHero ? "site-header is-over-hero" : "site-header"} ref={headerRef}>
-            <div className="site-header-bar site-frame">
-                <Link className="site-wordmark" to="/" aria-label="Kaze home">Kaze</Link>
-                {/* Decorative repeat of the page's <h1>, so it stays hidden from assistive tech. */}
-                {heroTitle && <span className={isHeroTitleHidden ? "site-header-title is-visible" : "site-header-title"} aria-hidden="true">
-                    <span className="site-header-title-text">{heroTitle}</span>
-                </span>}
+        <header className="site-header" ref={headerRef}>
+            <div className="site-header-bar">
+                <div className="site-header-identity">
+                    <Link className="site-wordmark" to="/" onClick={closeMenu} aria-label="Kaze home">Kaze</Link>
+                    {heroTitle && <span className={isHeroTitleHidden ? "site-header-title is-visible" : "site-header-title"} aria-hidden="true">
+                        <span className="site-header-title-text">{heroTitle}</span>
+                    </span>}
+                </div>
                 <DestinationLinks className="site-nav"/>
-                <details className="site-mobile-menu" ref={menuRef}>
+                <details
+                    className="site-mobile-menu"
+                    ref={menuRef}
+                    onKeyDown={event => {
+                        if (event.key === "Escape" && event.currentTarget.open) {
+                            event.preventDefault();
+                            closeMenu();
+                            event.currentTarget.querySelector("summary")?.focus();
+                        }
+                    }}
+                >
                     <summary>Menu</summary>
-                    <DestinationLinks
-                        className="site-mobile-destinations"
-                        onNavigate={() => menuRef.current?.removeAttribute("open")}
-                    />
+                    <DestinationLinks className="site-mobile-destinations" onNavigate={closeMenu}/>
                 </details>
             </div>
         </header>

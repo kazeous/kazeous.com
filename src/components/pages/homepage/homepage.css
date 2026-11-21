@@ -15,7 +15,7 @@
     flex: 1;
     width: 100%;
     max-width: none !important;
-    margin: 0 auto !important;
+    margin: calc(-1 * var(--header-height)) auto 0 !important;
     border: 0;
 }
 
@@ -26,6 +26,7 @@
     place-items: center;
     margin: 0;
     padding: 40px 16px;
+    padding-block-start: calc(40px + var(--header-height));
     background: linear-gradient(122deg, #a8c8dd, #94b7d5 50%, #7297be);
     color: #102a5f;
 }
