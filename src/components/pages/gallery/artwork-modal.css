@@ -669,6 +669,8 @@ dialog.image-viewer::backdrop {
     }
 
     .am-body {
+        /* Let both rows fit their content while the dialog handles scrolling. */
+        flex: none;
         grid-template-columns: minmax(0, 1fr);
         gap: var(--space-md);
         padding: 0 var(--space-sm) var(--space-lg);
