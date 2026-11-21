@@ -21,7 +21,7 @@ export const collections: Collection[] = [
                 name: "Kaze Hishou",
                 href: "https://vsona.vgen.co/kazehishou",
                 note: "Character sheet on VGen",
-                image: "https://kaze-art0-bucket.s3.amazonaws.com/thumbnail/cmere.webp",
+                image: "https://cfr2.kazeous.com/thumbnail/cmere.webp",
                 imageAlt: "Gallery artwork used temporarily for Kaze Hishou",
             },
         ],
